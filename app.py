@@ -6,7 +6,7 @@ import sqlite3
 
 
 DB_NAME = "time_entries.db"
-ADMIN_PASSWORD = st.secrets["admin_password"] # change this for local testing
+ADMIN_PASSWORD = st.secrets["admin_password"]
 total_quota = 25.0
 
 # DB Setup
@@ -89,25 +89,23 @@ with chart_col2:
     df["entry_date"] = pd.to_datetime(df["entry_date"])
     df["date_formatted"] = df["entry_date"].dt.date
     # Compute start of each week
-    df["week"] = df["entry_date"].dt.to_period("W").apply(lambda r: r.start_time)
+    if not df.empty:
+        df["week"] = pd.to_datetime(df["entry_date"]).dt.to_period("W").apply(lambda r: r.start_time)
+        weekly_usage = df.groupby("week")["hours"].sum().reset_index()
 
-    # Aggregate used hours per week
-    weekly_usage = df.groupby("week")["hours"].sum().reset_index()
+        start = df["week"].min()
+        end = pd.Timestamp.today().normalize()
+        full_weeks = pd.date_range(start=start, end=end, freq="W-MON")
 
-    # Create a complete weekly range
-    start = df["week"].min()
-    end = pd.Timestamp.today().normalize()
-    full_weeks = pd.date_range(start=start, end=end, freq="W-MON")
+        full_df = pd.DataFrame({"week": full_weeks})
+        weekly_usage_full = full_df.merge(weekly_usage, on="week", how="left").fillna(0)
+        weekly_usage_full["hours"] = weekly_usage_full["hours"].astype(float)
 
-    # Create DataFrame for all weeks
-    full_df = pd.DataFrame({"week": full_weeks})
-
-    # Merge actual usage into the full weekly list
-    weekly_usage_full = full_df.merge(weekly_usage, on="week", how="left").fillna(0)
-    weekly_usage_full["hours"] = weekly_usage_full["hours"].astype(float)
-
-    st.subheader("Übersicht pro Woche")
-    st.line_chart(weekly_usage_full.set_index("week"))
+        st.subheader("Übersicht pro Woche")
+        st.line_chart(weekly_usage_full.set_index("week"))
+    else:
+        st.subheader("Übersicht pro Woche)")
+        st.info("No data yet. Add time entries to see usage trends.")
 
 # display entries
 st.subheader("Gebuchte Einträge")
