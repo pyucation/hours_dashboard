@@ -6,7 +6,7 @@ import sqlite3
 
 
 DB_NAME = "time_entries.db"
-ADMIN_PASSWORD = 123 #st.secrets["admin_password"]
+ADMIN_PASSWORD = st.secrets["admin_password"] # change this for local testing
 total_quota = 25.0
 
 # DB Setup
